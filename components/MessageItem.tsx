@@ -1,6 +1,7 @@
 'use client';
 
 import type { Conversation } from '@/lib/history';
+import Markdown from './Markdown';
 
 type ChatMessage = Conversation['messages'][number];
 
@@ -20,7 +21,7 @@ export default function MessageItem({ message }: { message: ChatMessage }) {
   const mine = message.role === 'user';
   return (
     <div className={`max-w-2xl whitespace-pre-wrap rounded p-3 ${mine ? 'ml-auto bg-gray-100' : 'bg-white'}`}>
-      {textOf(message)}
+      {mine ? textOf(message) : <Markdown text={textOf(message)} />}
     </div>
   );
 }
