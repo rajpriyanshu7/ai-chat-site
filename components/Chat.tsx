@@ -7,6 +7,7 @@ import { deleteConversation, loadConversations, saveConversation, type Conversat
 import Sidebar from './Sidebar';
 import MessageList from './MessageList';
 import Composer from './Composer';
+import SettingsPanel from './SettingsPanel';
 
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -17,6 +18,7 @@ export default function Chat() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [model, setModel] = useState('test-model');
   const [draft, setDraft] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // NOTE (Task 7 adaptation): useChat builds its Chat once on mount and keeps
   // the transport instance, so a plain `body: { model }` object would freeze
@@ -78,7 +80,14 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen">
-      <Sidebar conversations={conversations} activeId={activeId} onSelect={open} onNew={newChat} onDelete={remove} model={model} onModel={setModel} />
+      <Sidebar conversations={conversations} activeId={activeId} onSelect={open} onNew={newChat} onDelete={remove} model={model} onModel={setModel} onSettings={() => setSettingsOpen(true)} />
+      {settingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm bg-white">
+            <SettingsPanel onClose={() => setSettingsOpen(false)} />
+          </div>
+        </div>
+      )}
       <main className="flex flex-1 flex-col">
         <MessageList messages={messages} onRegenerate={() => regenerate()} onEdit={editAndRetry} />
         {status === 'error' && (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { Conversation } from '@/lib/history';
 import ModelPicker from './ModelPicker';
 
@@ -12,9 +13,10 @@ interface Props {
   onDelete: (id: string) => void;
   model: string;
   onModel: (m: string) => void;
+  onSettings: () => void;
 }
 
-export default function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, model, onModel }: Props) {
+export default function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, model, onModel, onSettings }: Props) {
   const [q, setQ] = useState('');
   const filtered = conversations.filter(c => c.title.toLowerCase().includes(q.toLowerCase()));
   return (
@@ -30,6 +32,11 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
         ))}
       </div>
       <ModelPicker model={model} onModel={onModel} />
+      <button onClick={onSettings} className="mt-2 rounded border px-3 py-2">Settings</button>
+      <nav className="mt-2 flex gap-3 text-xs text-gray-500">
+        <Link href="/privacy" className="underline">Privacy</Link>
+        <Link href="/terms" className="underline">Terms</Link>
+      </nav>
     </aside>
   );
 }
