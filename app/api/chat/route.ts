@@ -1,10 +1,15 @@
 import { streamText, type UIMessage } from 'ai';
 import { buildModelMessages, getModel, mapProviderError } from '@/lib/provider';
+import { checkRateLimit, clientIp } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
 const MAX_CHARS = 8000;
 
 export async function POST(req: Request) {
+  const rl = await checkRateLimit(clientIp(req));
+  if (!rl.ok) {
+    return Response.json({ error: 'Too many messages. Please wait a little and try again.' }, { status: 429, headers: { 'Retry-After': '60' } });
+  }
   try {
     const body = await req.json();
     const messages = body?.messages as UIMessage[] | undefined;
