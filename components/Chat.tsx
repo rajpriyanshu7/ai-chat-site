@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { deleteConversation, loadConversations, saveConversation, type Conversation } from '@/lib/history';
 import Sidebar from './Sidebar';
 import MessageList from './MessageList';
 import Composer from './Composer';
-
-type ChatMessage = Conversation['messages'][number];
 
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -16,45 +16,78 @@ export default function Chat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [model, setModel] = useState('test-model');
+  const [draft, setDraft] = useState('');
+
+  // NOTE (Task 7 adaptation): useChat builds its Chat once on mount and keeps
+  // the transport instance, so a plain `body: { model }` object would freeze
+  // the first model value forever. `body` accepts a function resolved per
+  // request, so read the live model through a ref instead.
+  const modelRef = useRef(model);
+  modelRef.current = model;
+
+  const { messages, sendMessage, stop, status, regenerate, setMessages, error } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat', body: () => ({ model: modelRef.current }) }),
+  });
+  const busy = status === 'streaming' || status === 'submitted';
 
   useEffect(() => { setConversations(loadConversations()); }, []);
 
-  const active = conversations.find(c => c.id === activeId) ?? null;
+  useEffect(() => {
+    if (!activeId || messages.length === 0) return;
+    const firstText = messages.find(m => m.role === 'user')?.parts.find(p => p.type === 'text');
+    const title = (firstText && 'text' in firstText ? firstText.text : 'Chat').slice(0, 40);
+    saveConversation({ id: activeId, title, model, updatedAt: Date.now(), messages });
+    setConversations(loadConversations());
+  }, [messages, activeId, model]);
 
   function newChat(): void {
-    const c: Conversation = { id: uid(), title: 'New chat', model, updatedAt: Date.now(), messages: [] };
-    saveConversation(c);
-    setConversations(loadConversations());
-    setActiveId(c.id);
+    setMessages([]);
+    setActiveId(uid());
   }
 
   function send(text: string): void {
-    const userMsg: ChatMessage = { id: uid(), role: 'user', parts: [{ type: 'text', text }] };
-    const base: Conversation = active ?? { id: uid(), title: text.slice(0, 40) || 'New chat', model, updatedAt: Date.now(), messages: [] };
-    const withUser: Conversation = {
-      ...base,
-      title: base.messages.length === 0 ? text.slice(0, 40) || 'New chat' : base.title,
-      updatedAt: Date.now(),
-      messages: [...base.messages, userMsg,
-        { id: uid(), role: 'assistant', parts: [{ type: 'text', text: 'Backend not connected yet.' }] }],
-    };
-    saveConversation(withUser);
-    setConversations(loadConversations());
-    setActiveId(withUser.id);
+    if (!activeId) setActiveId(uid());
+    setDraft('');
+    void sendMessage({ parts: [{ type: 'text', text }] });
+  }
+
+  function editAndRetry(index: number): void {
+    const msg = messages[index];
+    if (!msg || msg.role !== 'user') return;
+    const t = msg.parts.filter(p => p.type === 'text').map(p => ('text' in p ? p.text : '')).join('');
+    setMessages(messages.slice(0, index));
+    setDraft(t);
+  }
+
+  function open(id: string): void {
+    const c = loadConversations().find(x => x.id === id);
+    if (!c) return;
+    setActiveId(id);
+    setModel(c.model);
+    setMessages(c.messages);
   }
 
   function remove(id: string): void {
     deleteConversation(id);
     setConversations(loadConversations());
-    if (activeId === id) setActiveId(null);
+    if (id === activeId) {
+      setMessages([]);
+      setActiveId(uid());
+    }
   }
 
   return (
     <div className="flex h-screen">
-      <Sidebar conversations={conversations} activeId={activeId} onSelect={setActiveId} onNew={newChat} onDelete={remove} model={model} onModel={setModel} />
+      <Sidebar conversations={conversations} activeId={activeId} onSelect={open} onNew={newChat} onDelete={remove} model={model} onModel={setModel} />
       <main className="flex flex-1 flex-col">
-        <MessageList messages={active?.messages ?? []} />
-        <Composer onSend={send} />
+        <MessageList messages={messages} onRegenerate={() => regenerate()} onEdit={editAndRetry} />
+        {status === 'error' && (
+          <div role="alert" className="mx-4 mb-2 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+            {error?.message ?? 'The request failed.'}{' '}
+            <button onClick={() => regenerate()} className="underline">Retry</button>
+          </div>
+        )}
+        <Composer draft={draft} onDraft={setDraft} onSend={send} onStop={stop} busy={busy} />
       </main>
     </div>
   );

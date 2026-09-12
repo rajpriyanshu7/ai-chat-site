@@ -17,11 +17,23 @@ function textOf(m: ChatMessage): string {
     .join('');
 }
 
-export default function MessageItem({ message }: { message: ChatMessage }) {
+interface Props {
+  message: ChatMessage;
+  onEdit?: () => void;
+  onRegenerate?: () => void;
+}
+
+export default function MessageItem({ message, onEdit, onRegenerate }: Props) {
   const mine = message.role === 'user';
   return (
     <div className={`max-w-2xl whitespace-pre-wrap rounded p-3 ${mine ? 'ml-auto bg-gray-100' : 'bg-white'}`}>
       {mine ? textOf(message) : <Markdown text={textOf(message)} />}
+      {(onEdit ?? onRegenerate) != null && (
+        <div className="mt-1 flex gap-3 text-xs text-gray-500">
+          {mine && onEdit != null && <button onClick={onEdit} className="underline">Edit</button>}
+          {!mine && onRegenerate != null && <button onClick={onRegenerate} className="underline">Regenerate</button>}
+        </div>
+      )}
     </div>
   );
 }
