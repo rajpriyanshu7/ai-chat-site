@@ -1,13 +1,4 @@
-// NOTE: Brief specifies `import type { UIMessage } from 'ai'`, but the `ai`
-// package is not installed until Task 5, so that import would fail. Define the
-// message type structurally here instead (no extra exports). Shape matches the
-// real UIMessage core (id + role) with an index signature so extra fields
-// (e.g. parts/content) still type-check; revisit when `ai` lands.
-type UIMessage = {
-  id: string;
-  role: string;
-  [key: string]: unknown;
-};
+import type { UIMessage } from 'ai';
 
 export const STORAGE_KEY = 'aichat:conversations:v1';
 

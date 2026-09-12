@@ -1,6 +1,6 @@
 'use client';
 
-const MODELS = [{ id: 'test-model', label: 'Test Model' }];
+import { MODELS } from '@/lib/models';
 
 export default function ModelPicker({ model, onModel }: { model: string; onModel: (m: string) => void }) {
   return (
