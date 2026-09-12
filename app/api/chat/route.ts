@@ -1,6 +1,7 @@
 import { streamText, type UIMessage } from 'ai';
 import { buildModelMessages, getModel, mapProviderError } from '@/lib/provider';
 import { checkRateLimit, clientIp } from '@/lib/rate-limit';
+import { overBudget, recordUsage } from '@/lib/usage';
 
 export const maxDuration = 30;
 const MAX_CHARS = 8000;
@@ -9,6 +10,9 @@ export async function POST(req: Request) {
   const rl = await checkRateLimit(clientIp(req));
   if (!rl.ok) {
     return Response.json({ error: 'Too many messages. Please wait a little and try again.' }, { status: 429, headers: { 'Retry-After': '60' } });
+  }
+  if (await overBudget()) {
+    return Response.json({ error: 'Free usage for today is used up. Please come back tomorrow.' }, { status: 429 });
   }
   try {
     const body = await req.json();
@@ -21,7 +25,13 @@ export async function POST(req: Request) {
       m.parts?.some(p => p.type === 'text' && 'text' in p && p.text.length > MAX_CHARS));
     if (tooLong) return Response.json({ error: 'a message exceeds 8000 characters' }, { status: 400 });
 
-    const result = streamText({ model: getModel(modelId), messages: buildModelMessages(messages) });
+    const result = streamText({
+      model: getModel(modelId),
+      messages: buildModelMessages(messages),
+      onFinish: ({ usage }) => {
+        void recordUsage(modelId, usage.inputTokens ?? 0, usage.outputTokens ?? 0);
+      },
+    });
     return result.toUIMessageStreamResponse();
   } catch (e) {
     const mapped = mapProviderError(e);
