@@ -17,7 +17,7 @@ function uid(): string {
 export default function Chat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [model, setModel] = useState('muse-spark-1.3-contributor-free');
+  const [model, setModel] = useState('nvidia/nemotron-3-super-120b-a12b:free');
   const [draft, setDraft] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
