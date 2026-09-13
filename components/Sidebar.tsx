@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Conversation } from '@/lib/history';
-import { GearIcon, SearchIcon, SquarePenIcon, TrashIcon } from './icons';
+import { groupByRecency } from '@/lib/history';
+import { GearIcon, PencilIcon, SearchIcon, SquarePenIcon, TrashIcon } from './icons';
 
 interface Props {
   conversations: Conversation[];
@@ -11,16 +12,25 @@ interface Props {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
   onSettings: () => void;
   /** Mobile drawer: open/closed state (ignored at md+ where it is static). */
   open: boolean;
   onClose: () => void;
 }
 
-export default function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, onSettings, open, onClose }: Props) {
+export default function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, onRename, onSettings, open, onClose }: Props) {
   const [q, setQ] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
   const filtered = conversations.filter(c => c.title.toLowerCase().includes(q.toLowerCase()));
+  const groups = useMemo(() => groupByRecency(filtered, Date.now()), [filtered]);
+
+  function commitRename(c: Conversation): void {
+    if (editValue.trim()) onRename(c.id, editValue);
+    setEditingId(null);
+  }
 
   // Cmd/Ctrl+K focuses chat search (desktop only, where the sidebar is visible).
   useEffect(() => {
@@ -69,30 +79,63 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
       </div>
 
       <nav className="flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-label="Chat history">
-        {filtered.map(c => (
-          <div
-            key={c.id}
-            className={`group mb-0.5 flex items-center rounded-lg ${
-              c.id === activeId ? 'bg-accent-soft' : 'hover:bg-hover'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => { onSelect(c.id); onClose(); }}
-              className={`min-h-11 flex-1 truncate px-3 py-2 text-left text-[13.5px] ${
-                c.id === activeId ? 'text-accent' : 'text-text'
-              }`}
-            >
-              {c.title}
-            </button>
-            <button
-              type="button"
-              aria-label={`Delete ${c.title}`}
-              onClick={e => { e.stopPropagation(); onDelete(c.id); }}
-              className="reveal mr-1 flex size-11 shrink-0 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-text md:size-9"
-            >
-              <TrashIcon size={15} />
-            </button>
+        {groups.map(g => (
+          <div key={g.label}>
+            <div className="px-3 pb-1 pt-3 text-[12px] text-dim">{g.label}</div>
+            {g.items.map(c => (
+              <div
+                key={c.id}
+                className={`group mb-0.5 flex items-center rounded-lg ${
+                  c.id === activeId ? 'bg-accent-soft' : 'hover:bg-hover'
+                }`}
+              >
+                {editingId === c.id ? (
+                  <input
+                    value={editValue}
+                    autoFocus
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitRename(c);
+                      else if (e.key === 'Escape') setEditingId(null);
+                    }}
+                    onBlur={() => commitRename(c)}
+                    aria-label={`Rename ${c.title}`}
+                    className="mx-1 my-0.5 min-h-[44px] flex-1 rounded-lg border border-accent bg-bg px-2 text-[13.5px] text-text focus:outline-none md:min-h-0 md:py-2"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { onSelect(c.id); onClose(); }}
+                    className={`min-h-11 flex-1 truncate px-3 py-2 text-left text-[13.5px] ${
+                      c.id === activeId ? 'text-accent' : 'text-text'
+                    }`}
+                  >
+                    {c.title}
+                  </button>
+                )}
+                {editingId !== c.id && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label={`Rename ${c.title}`}
+                      onClick={e => { e.stopPropagation(); setEditingId(c.id); setEditValue(c.title); }}
+                      className="reveal flex size-11 shrink-0 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-text md:size-9"
+                    >
+                      <PencilIcon size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${c.title}`}
+                      onClick={e => { e.stopPropagation(); onDelete(c.id); }}
+                      className="reveal mr-1 flex size-11 shrink-0 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-text md:size-9"
+                    >
+                      <TrashIcon size={15} />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         ))}
       </nav>

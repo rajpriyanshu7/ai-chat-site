@@ -64,6 +64,10 @@ export function ArrowUpIcon(p: IconProps) {
   return <Svg {...p}><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></Svg>;
 }
 
+export function ArrowDownIcon(p: IconProps) {
+  return <Svg {...p}><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></Svg>;
+}
+
 export function StopIcon(p: IconProps) {
   return <Svg {...p}><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none" /></Svg>;
 }

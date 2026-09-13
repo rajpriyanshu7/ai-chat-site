@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { clearAll, loadConversations } from '@/lib/history';
+import { useRef, useState } from 'react';
+import { clearAll, importConversations, loadConversations } from '@/lib/history';
 import { applyTheme, effectiveTheme, persistThemeChoice, readThemeChoice, type ThemeChoice } from '@/lib/theme';
 import ModelPicker from './ModelPicker';
 import { DownloadIcon, XIcon } from './icons';
@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
   model: string;
   onModel: (m: string) => void;
+  /** Refresh the chat list after a successful import. */
+  onImported?: () => void;
 }
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
@@ -18,8 +20,11 @@ const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: 'system', label: 'System' },
 ];
 
-export default function SettingsPanel({ onClose, model, onModel }: Props) {
+export default function SettingsPanel({ onClose, model, onModel, onImported }: Props) {
   const [choice, setChoice] = useState<ThemeChoice>(() => readThemeChoice(window.localStorage));
+  const [importResult, setImportResult] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function chooseTheme(c: ThemeChoice): void {
     setChoice(c);
@@ -37,6 +42,29 @@ export default function SettingsPanel({ onClose, model, onModel }: Props) {
     a.download = 'my-chats.json';
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  async function importFile(file: File): Promise<void> {
+    setImportResult(null);
+    setImportError(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setImportError('That file is too large to import (limit 5 MB).');
+      return;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      setImportError('That file is not valid JSON.');
+      return;
+    }
+    try {
+      const { imported, skipped } = importConversations(parsed);
+      setImportResult(`Imported ${imported} chat${imported === 1 ? '' : 's'}, skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}.`);
+      onImported?.();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : 'That file is not a valid chat export.');
+    }
   }
 
   function wipe(): void {
@@ -100,6 +128,31 @@ export default function SettingsPanel({ onClose, model, onModel }: Props) {
               <DownloadIcon size={15} />
               Export my chats
             </button>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-3 text-[14px] text-text transition-colors hover:bg-hover md:h-10"
+            >
+              Import chats
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              aria-label="Choose a chat export file"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) void importFile(f);
+              }}
+            />
+            {importResult != null && (
+              <p role="status" className="text-[13px] text-dim">{importResult}</p>
+            )}
+            {importError != null && (
+              <p role="alert" className="text-[13px] text-err">{importError}</p>
+            )}
             <button
               type="button"
               onClick={wipe}

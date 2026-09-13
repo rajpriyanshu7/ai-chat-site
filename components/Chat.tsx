@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { deleteConversation, loadConversations, saveConversation, type Conversation } from '@/lib/history';
+import { deleteConversation, loadConversations, renameConversation, saveConversation, type Conversation } from '@/lib/history';
 import Sidebar from './Sidebar';
 import MessageList from './MessageList';
 import Composer from './Composer';
@@ -50,8 +50,14 @@ export default function Chat() {
 
   useEffect(() => {
     if (!activeId || messages.length === 0) return;
-    const firstText = messages.find(m => m.role === 'user')?.parts.find(p => p.type === 'text');
-    const title = (firstText && 'text' in firstText ? firstText.text : 'Chat').slice(0, 40);
+    // Preserve a stored title (e.g. after rename); only derive a title for
+    // conversations not yet in the store so renames survive new messages.
+    const stored = loadConversations().find(c => c.id === activeId);
+    let title = stored?.title;
+    if (title == null) {
+      const firstText = messages.find(m => m.role === 'user')?.parts.find(p => p.type === 'text');
+      title = (firstText && 'text' in firstText ? firstText.text : 'Chat').slice(0, 40);
+    }
     saveConversation({ id: activeId, title, model, updatedAt: Date.now(), messages });
     setConversations(loadConversations());
   }, [messages, activeId, model]);
@@ -123,6 +129,7 @@ export default function Chat() {
         onSelect={open}
         onNew={newChat}
         onDelete={remove}
+        onRename={(id, t) => { renameConversation(id, t); setConversations(loadConversations()); }}
         onSettings={openSettings}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -209,7 +216,7 @@ export default function Chat() {
             className="absolute inset-0 bg-black/60"
           />
           <div className="relative w-full max-w-md rounded-t-2xl border border-border bg-side shadow-[var(--sheet-shadow)] sm:rounded-2xl">
-            <SettingsPanel onClose={() => setSettingsOpen(false)} model={model} onModel={setModel} />
+            <SettingsPanel onClose={() => setSettingsOpen(false)} model={model} onModel={setModel} onImported={() => setConversations(loadConversations())} />
           </div>
         </div>
       )}
