@@ -44,7 +44,7 @@ export default function MessageItem({ message, onEdit, onRegenerate, streaming }
   if (mine) {
     return (
       <div className="group flex flex-col items-end">
-        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-well px-4 py-2.5 text-[15.5px] leading-[1.7] text-text md:max-w-[75%]">
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-well px-4 py-2.5 text-[15.5px] leading-[1.7] text-text md:max-w-[75%]">
           {textOf(message)}
         </div>
         {onEdit != null && (
@@ -52,7 +52,7 @@ export default function MessageItem({ message, onEdit, onRegenerate, streaming }
             <button
               type="button"
               onClick={onEdit}
-              className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text"
+              className="flex h-8 min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text md:min-h-0"
             >
               <PencilIcon size={14} />
               Edit
@@ -72,7 +72,7 @@ export default function MessageItem({ message, onEdit, onRegenerate, streaming }
         <button
           type="button"
           onClick={copy}
-          className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text"
+          className="flex h-8 min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text md:min-h-0"
         >
           <CopyIcon size={14} />
           {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy'}
@@ -81,7 +81,7 @@ export default function MessageItem({ message, onEdit, onRegenerate, streaming }
           <button
             type="button"
             onClick={onRegenerate}
-            className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text"
+            className="flex h-8 min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-[13px] text-dim transition-colors hover:bg-hover hover:text-text md:min-h-0"
           >
             <RotateIcon size={14} />
             Regenerate

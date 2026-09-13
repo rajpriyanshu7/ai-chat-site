@@ -55,6 +55,7 @@ export default function SettingsPanel({ onClose, model, onModel }: Props) {
           type="button"
           onClick={onClose}
           aria-label="Close settings"
+          autoFocus
           className="flex size-11 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-text md:size-9"
         >
           <XIcon size={17} />
@@ -64,13 +65,14 @@ export default function SettingsPanel({ onClose, model, onModel }: Props) {
       <div className="flex flex-col gap-5 overflow-y-auto px-5 py-5">
         <section>
           <h3 className="mb-2 text-[13px] font-medium text-dim">Appearance</h3>
-          <div role="radiogroup" aria-label="Theme" className="flex rounded-lg border border-border bg-well p-1">
+          {/* Toggle-button group (not radiogroup: no arrow-key APG pattern to
+              violate); aria-pressed carries the selected state. */}
+          <div role="group" aria-label="Theme" className="flex rounded-lg border border-border bg-well p-1">
             {THEMES.map(t => (
               <button
                 key={t.value}
                 type="button"
-                role="radio"
-                aria-checked={choice === t.value}
+                aria-pressed={choice === t.value}
                 onClick={() => chooseTheme(t.value)}
                 className={`h-11 flex-1 rounded-md text-[13.5px] font-medium transition-colors md:h-9 ${
                   choice === t.value ? 'bg-bg text-text' : 'text-dim hover:text-text'

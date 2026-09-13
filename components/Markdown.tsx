@@ -42,7 +42,9 @@ function CodeBlock({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={copy}
-          className="px-2.5 py-1.5 text-[12px] font-medium text-dim transition-colors hover:text-text"
+          // ::after hit-slop: 44px-class tap target without growing the
+          // absolute-positioned header over the code beneath it.
+          className="relative px-2.5 py-1.5 text-[12px] font-medium text-dim transition-colors after:absolute after:-inset-3 after:content-[''] hover:text-text"
         >
           {status === 'copied' ? 'Copied' : status === 'failed' ? 'Copy failed' : 'Copy'}
         </button>

@@ -22,6 +22,17 @@ export default function Chat() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  // Settings sheet focus: remember the opener so focus returns to it.
+  const settingsReturnRef = useRef<HTMLElement | null>(null);
+  function openSettings(): void {
+    if (document.activeElement instanceof HTMLElement) settingsReturnRef.current = document.activeElement;
+    setSettingsOpen(true);
+  }
+  useEffect(() => {
+    if (settingsOpen) return;
+    settingsReturnRef.current?.focus();
+    settingsReturnRef.current = null;
+  }, [settingsOpen]);
 
   // NOTE (Task 7 adaptation): useChat builds its Chat once on mount and keeps
   // the transport instance, so a plain `body: { model }` object would freeze
@@ -112,7 +123,7 @@ export default function Chat() {
         onSelect={open}
         onNew={newChat}
         onDelete={remove}
-        onSettings={() => setSettingsOpen(true)}
+        onSettings={openSettings}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />
@@ -151,7 +162,7 @@ export default function Chat() {
             type="button"
             aria-label="Settings"
             title="Settings"
-            onClick={() => setSettingsOpen(true)}
+            onClick={openSettings}
             className="flex size-11 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-text md:hidden"
           >
             <GearIcon size={19} />
@@ -178,7 +189,7 @@ export default function Chat() {
               <button
                 type="button"
                 onClick={() => regenerate()}
-                className="mt-0.5 shrink-0 rounded-full border border-border px-3 py-1 text-[13px] font-medium text-text transition-colors hover:bg-well"
+                className="mt-0.5 min-h-[44px] shrink-0 rounded-full border border-border px-3 py-1 text-[13px] font-medium text-text transition-colors hover:bg-well md:min-h-0"
               >
                 Retry
               </button>

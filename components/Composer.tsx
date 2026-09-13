@@ -71,7 +71,7 @@ export default function Composer({ draft, onDraft, onSend, onStop, busy, inputRe
                 onClick={onStop}
                 aria-label="Stop"
                 title="Stop"
-                className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-accent text-bg"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent text-bg md:size-[34px]"
               >
                 <StopIcon size={16} />
               </button>
@@ -82,8 +82,10 @@ export default function Composer({ draft, onDraft, onSend, onStop, busy, inputRe
                 disabled={!canSend}
                 aria-label="Send"
                 title="Send"
-                className={`flex size-[34px] shrink-0 items-center justify-center rounded-full transition-colors ${
-                  canSend ? 'bg-accent text-white hover:opacity-90' : 'bg-hover text-dim'
+                className={`flex size-11 shrink-0 items-center justify-center rounded-full transition-colors md:size-[34px] ${
+                  // text-bg tracks the theme: dark arrow on the accent in dark
+                  // mode (per design), near-white in light mode for contrast.
+                  canSend ? 'bg-accent text-bg hover:opacity-90' : 'bg-hover text-dim'
                 }`}
               >
                 <ArrowUpIcon size={18} />

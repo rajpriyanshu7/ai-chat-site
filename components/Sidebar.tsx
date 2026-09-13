@@ -39,7 +39,9 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
     <aside
       aria-label="Chats"
       className={`drawer-slide fixed inset-y-0 left-0 z-40 flex h-full w-[264px] max-w-[85vw] shrink-0 flex-col border-r border-border bg-side md:static md:z-auto md:max-w-none md:translate-x-0 ${
-        open ? 'translate-x-0' : '-translate-x-full'
+        // Closed drawer is visibility-hidden below md so its controls leave
+        // the tab order and a11y tree; desktop is always visible (md: rule).
+        open ? 'translate-x-0' : '-translate-x-full max-md:invisible'
       }`}
     >
       <div className="flex flex-col gap-2 p-3">
@@ -61,7 +63,7 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
             onChange={e => setQ(e.target.value)}
             placeholder="Search"
             aria-label="Search chats"
-            className="h-10 w-full rounded-full border border-transparent bg-well pl-9 pr-3 text-[13.5px] text-text placeholder:text-dim focus:border-accent focus:outline-none"
+            className="h-11 w-full rounded-full border border-transparent bg-well pl-9 pr-3 text-[13.5px] text-text placeholder:text-dim focus:border-accent focus:outline-none md:h-10"
           />
         </div>
       </div>
@@ -105,8 +107,8 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
           Settings
         </button>
         <nav className="flex gap-3 px-2 pt-1.5 text-[12px] text-dim" aria-label="Legal">
-          <Link href="/privacy" className="hover:text-text hover:underline">Privacy</Link>
-          <Link href="/terms" className="hover:text-text hover:underline">Terms</Link>
+          <Link href="/privacy" className="flex min-h-[44px] items-center hover:text-text hover:underline md:min-h-0">Privacy</Link>
+          <Link href="/terms" className="flex min-h-[44px] items-center hover:text-text hover:underline md:min-h-0">Terms</Link>
         </nav>
       </div>
     </aside>

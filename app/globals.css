@@ -124,9 +124,12 @@ body {
   }
 }
 
-/* Mobile drawer slide. Instant under reduced motion. */
+/* Mobile drawer slide. Instant under reduced motion. Visibility is discrete:
+ * it flips at the END of the duration when hiding and at the START when
+ * showing — so the slide plays both ways while a closed drawer is fully
+ * removed from tab order and screen readers (see max-md:invisible). */
 .drawer-slide {
-  transition: transform 200ms ease;
+  transition: transform 200ms ease, visibility 200ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
