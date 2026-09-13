@@ -1,28 +1,267 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
+/*
+ * Dark-first token theme. Dark is the default (`:root`); the `.light` class on
+ * <html> opts into the light set. Utilities are generated through
+ * `@theme inline` so every utility resolves the CSS variable at runtime and
+ * theme switching is instant with no duplicated `dark:` variants.
+ *
+ * Contrast (WCAG AA, verified numerically — see task-14 report):
+ *   dark  text #E8EBF0 on #0C1016 ≈ 14:1; dim #98A2B3 ≈ 7.4/6.3/5.8:1 on bg/well/hover
+ *   light text #161B22 on #FAFBFC ≈ 15:1; dim #5D6673 ≈ 5.6/5.3/5.1/4.7:1 on bg/side/well/hover
+ *   light accent darkened to #3B57D0 (≈4.7–5.9:1 on all surfaces) — the brief's
+ *   #6C8CFF reads 3:1 on light backgrounds and fails AA for text, so it was
+ *   adjusted as the brief's quality floor permits.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --bg: #0C1016;
+  --bg-side: #10141B;
+  --bg-well: #1A202A;
+  --bg-hover: #202734;
+  --border: #242C38;
+  --text: #E8EBF0;
+  --text-dim: #98A2B3;
+  --accent: #6C8CFF;
+  --accent-soft: rgba(108, 140, 255, 0.14);
+  --err: #FF8FA3;
+  --sheet-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.light {
+  color-scheme: light;
+  --bg: #FAFBFC;
+  --bg-side: #F2F4F7;
+  --bg-well: #EDF0F4;
+  --bg-hover: #E4E8EE;
+  --border: #DFE3EA;
+  --text: #161B22;
+  --text-dim: #5D6673;
+  --accent: #3B57D0;
+  --accent-soft: rgba(59, 87, 208, 0.12);
+  --err: #B3314A;
+  --sheet-shadow: 0 8px 32px rgba(22, 27, 34, 0.12);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-side: var(--bg-side);
+  --color-well: var(--bg-well);
+  --color-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-dim: var(--text-dim);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-err: var(--err);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard: every focusable thing gets a visible accent ring (Principle 4). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ------------------------------------------------------------------ *
+ * Streaming caret — blinking block cursor appended inline after the
+ * last markdown block of the streaming message (`.md-caret` wrapper).
+ * Static (visible) under prefers-reduced-motion, per the brief.
+ * ------------------------------------------------------------------ */
+.md-caret .md > :last-child::after {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  border-radius: 1px;
+  background: var(--text);
+  vertical-align: text-bottom;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* Hover-reveal affordances (message actions). Always visible on touch.
+ * Hidden = not clickable, so no invisible-button surprises. */
+.reveal {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.group:hover .reveal,
+.group:focus-within .reveal,
+.reveal:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .reveal {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Mobile drawer slide. Instant under reduced motion. */
+.drawer-slide {
+  transition: transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-caret .md > :last-child::after {
+    animation: none;
+  }
+  .drawer-slide {
+    transition: none;
+  }
+  .reveal {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Markdown — hand-rolled (no @tailwindcss/typography dependency).
+ * Applied via the `.md` wrapper rendered by components/Markdown.tsx.
+ * ------------------------------------------------------------------ */
+.md {
+  font-size: 15.5px;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md p {
+  margin: 0.8em 0;
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.2em 0 0.4em;
+}
+
+.md h1 { font-size: 1.35em; }
+.md h2 { font-size: 1.2em; }
+.md h3 { font-size: 1.05em; }
+.md h4,
+.md h5,
+.md h6 { font-size: 1em; }
+
+.md ul,
+.md ol {
+  margin: 0.8em 0;
+  padding-left: 1.25em;
+}
+
+.md li {
+  margin: 0.35em 0;
+}
+
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+
+.md pre {
+  background: var(--bg-well);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 0.8em 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+}
+
+.md :not(pre) > code {
+  background: var(--bg-well);
+  border-radius: 6px;
+  padding: 0.1em 0.375em;
+  font-size: 13px;
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+}
+
+.md .md-table-wrap {
+  margin: 0.8em 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.md table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+.md th,
+.md td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.md th {
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+
+.md blockquote {
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 1em;
+  border-left: 3px solid var(--accent);
+  color: var(--text-dim);
+}
+
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.6em 0;
+}
+
+.md a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.md a:hover {
+  text-decoration: underline;
+}
+
+.md img {
+  max-width: 100%;
+  border-radius: 12px;
 }
