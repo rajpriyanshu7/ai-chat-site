@@ -45,6 +45,13 @@ export default function Chat() {
 
   const { messages, sendMessage, stop, status, regenerate, setMessages, error } = useChat({
     transport: new DefaultChatTransport({ api: '/api/chat', body: () => ({ model: modelRef.current }) }),
+    // Throttle store→React notifications: reasoning models emit dense
+    // text/reasoning-delta bursts and each notification forces a synchronous
+    // useSyncExternalStore re-render. Unthrottled, a burst restarts in-flight
+    // renders faster than React can finish them until it throws "Maximum
+    // update depth exceeded" (error #185), which lands in useChat's `error`
+    // state and looks like a failed request. 50ms keeps streaming smooth.
+    experimental_throttle: 50,
   });
   const busy = status === 'streaming' || status === 'submitted';
 
