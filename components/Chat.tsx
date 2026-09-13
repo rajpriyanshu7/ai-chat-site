@@ -9,6 +9,7 @@ import MessageList from './MessageList';
 import Composer from './Composer';
 import SettingsPanel from './SettingsPanel';
 import { AlertIcon, GearIcon, MenuIcon, SquarePenIcon } from './icons';
+import { MODELS } from '@/lib/models';
 
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -17,7 +18,8 @@ function uid(): string {
 export default function Chat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [model, setModel] = useState('nvidia/nemotron-3-super-120b-a12b:free');
+  // Default follows the server chain order (first candidate wins).
+  const [model, setModel] = useState(MODELS[0]?.id ?? 'test-model');
   const [draft, setDraft] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
