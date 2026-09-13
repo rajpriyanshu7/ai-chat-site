@@ -97,7 +97,7 @@ export default function Sidebar({ conversations, activeId, onSelect, onNew, onDe
                     onChange={e => setEditValue(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter') commitRename(c);
-                      else if (e.key === 'Escape') setEditingId(null);
+                      else if (e.key === 'Escape') { e.stopPropagation(); setEditingId(null); }
                     }}
                     onBlur={() => commitRename(c)}
                     aria-label={`Rename ${c.title}`}
